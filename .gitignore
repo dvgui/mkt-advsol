@@ -17,3 +17,6 @@ seasonlock-*
 .vscode
 .openzeppelin
 heronft-address.txt
+contracts/abi
+typechain-types/*
+*-address.txt

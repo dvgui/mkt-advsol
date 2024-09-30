@@ -125,7 +125,7 @@ describe('Auction Contract', async () => {
           true, // is721
           deployer.nft.address, // nft address
           0, // nft token id
-          toWei(50), // erc1151 token amount
+          1, // erc1151 token amount
           endedAt, // auction end timestamp
           toWei(2) // base price
         )
@@ -157,7 +157,7 @@ describe('Auction Contract', async () => {
           true, // is721
           deployer.nft.address, // nft address
           0, // nft token id
-          toWei(50), // erc1151 token amount
+          1, // erc1151 token amount
           endedAt, // auction end timestamp
           toWei(2) // base price
         )
@@ -167,7 +167,7 @@ describe('Auction Contract', async () => {
           true, // is721
           deployer.nft.address, // nft address
           1, // nft token id
-          toWei(50), // erc1151 token amount
+          1, // erc1151 token amount
           endedAt, // auction end timestamp
           toWei(2) // base price
         )
@@ -200,7 +200,7 @@ describe('Auction Contract', async () => {
           true, // is721
           deployer.nft.address, // nft address
           0, // nft token id
-          toWei(50), // erc1151 token amount
+          1, // erc1151 token amount
           endedAt, // auction end timestamp
           toWei(1000) // base price
         )
@@ -244,7 +244,7 @@ describe('Auction Contract', async () => {
           true, // is721
           deployer.nft.address, // nft address
           0, // nft token id
-          toWei(50), // erc1151 token amount
+          1, // erc1151 token amount
           endedAt, // auction end timestamp
           toWei(1000) // base price
         )
@@ -305,7 +305,7 @@ describe('Auction Contract', async () => {
           true, // is721
           deployer.nft.address, // nft address
           0, // nft token id
-          toWei(50), // erc1151 token amount
+          1, // erc1151 token amount
           endedAt, // auction end timestamp
           toWei(1000) // base price
         )
@@ -350,7 +350,7 @@ describe('Auction Contract', async () => {
         true, // is721
         deployer.nft.address, // nft address
         1, // nft token id
-        toWei(50), // erc1151 token amount - irrelevant here
+        1, // erc1151 token amount - irrelevant here
         endedAt, // auction end timestamp
         toWei(100) // base price
       );
@@ -385,7 +385,7 @@ describe('Auction Contract', async () => {
           true, // is721
           deployer.nft.address, // nft address
           0, // nft token id
-          toWei(50), // erc1151 token amount
+          1, // erc1151 token amount
           endedAt, // auction end timestamp
           price // base price
         )
@@ -430,7 +430,7 @@ describe('Auction Contract', async () => {
           true, // is721
           deployer.nft.address, // nft address
           0, // nft token id
-          toWei(50), // erc1151 token amount
+          1, // erc1151 token amount
           endedAt, // auction end timestamp
           price // base price
         )
@@ -531,7 +531,7 @@ describe('Auction Contract', async () => {
           true, // is721
           deployer.nft.address, // nft address
           0, // nft token id
-          toWei(50), // erc1151 token amount
+          1, // erc1151 token amount
           endedAt, // auction end timestamp
           toWei(2) // base price
         )
@@ -541,7 +541,7 @@ describe('Auction Contract', async () => {
           true, // is721
           deployer.nft.address, // nft address
           1, // nft token id
-          toWei(50), // erc1151 token amount
+          1, // erc1151 token amount
           endedAt, // auction end timestamp
           toWei(2) // base price
         )
