@@ -1,0 +1,36 @@
+{
+  "env": {
+    "mocha": true
+  },
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "plugins": [
+      "@typescript-eslint",
+      "babel", 
+      "jest"
+  ],
+  "parserOptions": {
+      "project": "./tsconfig.json"
+  },
+  "extends": [
+      "airbnb", 
+      "plugin:prettier/recommended",
+      "plugin:import/recommended",
+      "airbnb-typescript",
+      "plugin:@typescript-eslint/recommended",
+      "prettier",
+      "prettier/@typescript-eslint"
+  ],
+  "rules": {
+    "@typescript-eslint/no-var-requires": 0,
+    "@typescript-eslint/no-use-before-define": 0,
+    "@typescript-eslint/naming-convention": 0,
+    "no-use-before-define": 0,
+    "no-console": 0,
+    "func-names": 0,
+    "consistent-return": 0,
+    "no-underscore-dangle": 0,
+    "global-require": 0,
+    "no-await-in-loop": 0
+  }
+}
