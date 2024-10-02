@@ -122,7 +122,6 @@ contract Marketplace is
 	error BidIsSmallerThanRequiredIncrementAborting();
 	error AuctionHasAlreadyEndedUnableToProcessBidAborting();
 	error ZeroBidsNotAllowed();
-	error BidSmallerThanRequiredIncrementAborting();
 	error BidHigherThanAskingPriceAborting();
 	error ListingHasAlreadyEndedUnableToProcessPurchaseAborting();
 	error ListingIsAlreadySettledAborting();
