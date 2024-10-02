@@ -445,19 +445,18 @@ contract Marketplace is
 		uint _askingPrice
 	) external whenNotPaused canList {
 		if (_askingPrice <= 0) revert InitialAskingPriceMustBeNonZero();
-		if ((isErc721 && amount != 1)) revert InvalidTokenAmount();
-		if ((!isErc721 && amount <= 0)) revert InvalidTokenAmount();
+		if ((isErc721 && amount != 1) || (!isErc721 && amount <= 0))
+			revert InvalidTokenAmount();
 		bytes32 id = keccak256(
 			abi.encode(msg.sender, nftAddress, tokenId, amount, block.timestamp)
 		);
 		if (_auctions[id].startedAt != 0)
 			revert AuctionAlreadyExistedRorCurrentAuctionId();
-		// if (_allowedNfts[nftAddress] == false) revert NFTUnauthorizedForSale();  // need to change test file
 		if (!_allowedNfts[nftAddress]) revert UnauthorizedNFT();
-		if (endedAt <= block.timestamp + minAuctionDuration)
-			revert InvalidAuctionDuration(); // pls double check logic as the
-		if (endedAt >= block.timestamp + maxAuctionDuration)
-			revert InvalidAuctionDuration(); // && was split into two tests
+		if (
+			endedAt <= block.timestamp + minAuctionDuration ||
+			endedAt >= block.timestamp + maxAuctionDuration
+		) revert InvalidAuctionDuration();
 
 		_escrowTokensToSell(isErc721, nftAddress, msg.sender, tokenId, amount);
 
