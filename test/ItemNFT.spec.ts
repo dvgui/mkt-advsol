@@ -35,7 +35,7 @@ describe('itemNFT', () => {
       const { testUser } = await getNamedAccounts();
       await expect(itemNFT.totalSupply(0)).to.eventually.equal(toBN(1));
       await expect(itemNFT.balanceOf(testUser, 0)).to.eventually.equal(toBN(1));
-      await expect(itemNFT.uri(0)).to.eventually.equal('https://api.legendofdante.com/nft/items/');
+      await expect(itemNFT.uri(0)).to.eventually.equal('https://nft-dev.api.dev.dantegames.com/api/p/nft/items/');
     });
 
     it('Should not mint an nft from an invalid minter', async () => {

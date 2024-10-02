@@ -34,7 +34,7 @@ describe('HeroNFT', () => {
       const { testUser } = await getNamedAccounts();
       await expect(heroNFT.totalSupply()).to.eventually.equal(toBN(1));
       await expect(heroNFT.balanceOf(testUser)).to.eventually.equal(toBN(1));
-      await expect(heroNFT.tokenURI(0)).to.eventually.equal('https://api.legendofdante.com/tokens/hero/0');
+      await expect(heroNFT.tokenURI(0)).to.eventually.equal('https://nft-dev.api.dev.dantegames.com/api/p/nft/hero/0');
       await expect(heroNFT.tokenTypes(0)).to.eventually.equal(1);
     });
 
