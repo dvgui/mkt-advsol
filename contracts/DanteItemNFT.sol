@@ -89,6 +89,7 @@ contract DanteItemNFT is
 			"ERC1155: ids and amounts length mismatch"
 		);
 		for (uint256 i = 0; i < ids.length; i++) {
+			uint itemCap = cap[ids[i]];
 			if (i != ids.length - 1) {
 				require(
 					ids[i] < ids[i + 1],
@@ -96,8 +97,8 @@ contract DanteItemNFT is
 				);
 			}
 			if (
-				cap[ids[i]] != 0 &&
-				super.totalSupply(ids[i]) + amounts[i] >= cap[ids[i]]
+				itemCap != 0 &&
+				super.totalSupply(ids[i]) + amounts[i] >= itemCap
 			) {
 				revert ItemCapReached(ids[i]);
 			}
