@@ -330,7 +330,7 @@ contract Marketplace is
 	function massCancelAuctions(
 		bytes32[] memory _ids
 	) external nonReentrant onlyRole(STORE_ADMIN_ROLE) {
-		for (uint i = 0; i < _ids.length; i = i + 1) {
+		for (uint i = 0; i < _ids.length; i++) {
 			cancelAuctionAdmin(_ids[i]);
 		}
 	}
