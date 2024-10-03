@@ -30,11 +30,11 @@ contract HeroNFT is
 	CountersUpgradeable.Counter private _tokenIdCounter;
 	bool public whitelistEnabled;
 
-	mapping(uint => uint) public tokenTypes;
+	mapping(uint256 => uint256) public tokenTypes;
 	mapping(address => bool) public whitelistAddress;
 
-	mapping(uint => CountersUpgradeable.Counter) public typeSupply;
-	mapping(uint => uint) public cap;
+	mapping(uint256 => CountersUpgradeable.Counter) public typeSupply;
+	mapping(uint256 => uint256) public cap;
 
 	event Mint(address indexed owner, uint tokenId, uint tokenType);
 	event Whitelist(bool enabled);
