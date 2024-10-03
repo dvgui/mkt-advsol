@@ -188,8 +188,13 @@ contract Marketplace is
 		listingOpen = true;
 	}
 
-	function getOpenAuctions() public view virtual returns (bytes32[] memory) {
-		return _openAuctions;
+	function getOpenAuctions()
+		public
+		view
+		virtual
+		returns (bytes32[] memory auctions)
+	{
+		auctions = _openAuctions;
 	}
 
 	function getOpenAuctionsPg(
@@ -245,16 +250,15 @@ contract Marketplace is
 
 	function getAuctions(
 		bytes32[] memory ids
-	) public view returns (Auction[] memory) {
+	) public view returns (Auction[] memory auctions) {
 		uint elementNumber = ids.length;
-		Auction[] memory auctions = new Auction[](elementNumber);
+		auctions = new Auction[](elementNumber);
 		for (uint i = 0; i < elementNumber; ) {
 			auctions[i] = _auctions[ids[i]];
 			unchecked {
 				i++;
 			}
 		}
-		return auctions;
 	}
 
 	/**
