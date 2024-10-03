@@ -447,7 +447,7 @@ contract Marketplace is
 		uint amount,
 		uint endedAt,
 		uint _askingPrice
-	) external whenNotPaused canList {
+	) public whenNotPaused canList {
 		if (_askingPrice <= 0) revert InitialAskingPriceMustBeNonZero();
 		if ((isErc721 && amount != 1) || (!isErc721 && amount <= 0))
 			revert InvalidTokenAmount();
@@ -493,6 +493,28 @@ contract Marketplace is
 			_askingPrice
 		);
 	}
+
+	function batchCreateSale(
+    bool[] calldata isErc721s,
+    address[] calldata nftAddresses,
+    uint[] calldata tokenIds,
+    uint[] calldata amounts,
+    uint[] calldata endedAts,
+    uint[] calldata askingPrices
+	) external whenNotPaused canList {
+		require(isErc721s.length == nftAddresses.length, "Mismatched arrays");
+		for (uint i = 0; i < isErc721s.length; i++) {
+			createSale(
+				isErc721s[i], 
+				nftAddresses[i], 
+				tokenIds[i], 
+				amounts[i], 
+				endedAts[i], 
+				askingPrices[i]
+			);
+		}
+	}
+
 
 	function bid(
 		bytes32 id,
