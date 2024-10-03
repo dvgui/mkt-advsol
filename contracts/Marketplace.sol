@@ -581,7 +581,15 @@ contract Marketplace is
 	}
 
 	function _toRemove(bytes32 id) internal {
-		uint _auctionLength = _openAuctions.length;
+		uint slot;
+		uint length;
+		assembly {
+			slot := _openAuctions.slot
+			length := sload(_openAuctions.slot)
+		}
+
+		bytes32 location = keccak256(abi.encode(slot));
+		/*
 		for (uint x = 0; x < _auctionLength; ) {
 			if (_openAuctions[x] == id) {
 				if (x != _auctionLength - 1) {
@@ -596,7 +604,38 @@ contract Marketplace is
 				x++;
 			}
 		}
-		delete _auctions[id];
+		delete _auctions[id]; 
+		*/
+		assembly {
+			// Loop through the _openAuctions array
+			for {
+				let x := 0
+			} lt(x, length) {
+				x := add(x, 1)
+			} {
+				// Calculate the storage slot for the current auction ID
+				let auctionSlot := add(location, x)
+
+				// Load the auction ID from storage
+				let auctionId := sload(auctionSlot)
+
+				// Check if the auction ID matches the provided id
+				if eq(auctionId, id) {
+					// If x is not the last index, swap the current element with the last element
+					if not(eq(x, sub(length, 1))) {
+						let lastAuctionSlot := add(location, sub(length, 1))
+						sstore(auctionSlot, sload(lastAuctionSlot))
+					}
+					// Decrease the length of the array
+					sstore(location, sub(length, 1))
+					break
+				}
+			}
+
+			// Calculate the storage slot for the auction ID in the _auctions mapping
+			let auctionMapSlot := add(_auctions.slot, id)
+			sstore(auctionMapSlot, 0)
+		}
 	}
 
 	function cancelAuction(bytes32 id) public virtual nonReentrant {
