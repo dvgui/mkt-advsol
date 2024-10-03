@@ -46,10 +46,9 @@ contract Marketplace is
 	}
 
 	modifier canList() {
-		require(
-			listingOpen || hasRole(STORE_ADMIN_ROLE, msg.sender),
-			"New listings are paused"
-		);
+		if (!(listingOpen || hasRole(STORE_ADMIN_ROLE, msg.sender))) {
+			revert NewListingsPaused();
+		}
 		_;
 	}
 
@@ -67,15 +66,15 @@ contract Marketplace is
 	uint public auctionFee;
 	uint public auctionCancellationFee;
 
-	uint private constant _auctionFeeDenominator = 100_00;
-	uint private constant _auctionMinimumBidIncrement = 5_00;
-
 	uint public minAuctionDuration;
 	uint public maxAuctionDuration;
 
 	address public erc20Address;
 
 	address public auctionFeeRecipient;
+
+	uint private constant _auctionFeeDenominator = 100_00;
+	uint private constant _auctionMinimumBidIncrement = 5_00;
 
 	bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 	bytes32 public constant STORE_ADMIN_ROLE = keccak256("STORE_ADMIN_ROLE");
@@ -108,6 +107,30 @@ contract Marketplace is
 
 	event ListingsPaused();
 	event ListingsResumed();
+
+	error InvalidAuctionFee();
+	error InvalidCancellationFee();
+	error InvalidRecipientAddress();
+	error InvalidTokenAddress();
+	error InvalidDurationRestrictions();
+	error NoOpenAuctions();
+	error InvalidTokenAmount();
+	error InitialAskingPriceMustBeNonZero();
+	error AuctionAlreadyExistedRorCurrentAuctionId();
+	error NFTUnauthorizedForSale();
+	error InvalidAuctionDuration();
+	error BidIsSmallerThanRequiredIncrementAborting();
+	error AuctionHasAlreadyEndedUnableToProcessBidAborting();
+	error ZeroBidsNotAllowed();
+	error BidHigherThanAskingPriceAborting();
+	error ListingHasAlreadyEndedUnableToProcessPurchaseAborting();
+	error ListingIsAlreadySettledAborting();
+	error AuctionIsAlreadySettledAborting();
+	error ListingCanOnlyBeAcceptedBySellerAborting();
+	error AuctionCantBeCancelledOnlyBySellerOrAdminAborting();
+	error InvalidAuctionPage();
+	error NewListingsPaused();
+	error UnauthorizedNFT();
 
 	function onERC1155Received(
 		address,
@@ -150,13 +173,12 @@ contract Marketplace is
 		_grantRole(UPGRADER_ROLE, msg.sender);
 		_grantRole(STORE_ADMIN_ROLE, msg.sender);
 
-		require(feeRecipient != address(0), "Invalid Recipient Address");
-		require(_erc20Address != address(0), "Invalid Token address");
-		require(fee < _auctionFeeDenominator, "Invalid Auction Fee");
-		require(
-			cancellationFee < _auctionFeeDenominator,
-			"Invalid Cancellation Fee"
-		);
+		if (feeRecipient == address(0)) revert InvalidRecipientAddress();
+		if (_erc20Address == address(0)) revert InvalidTokenAddress();
+		if (fee >= _auctionFeeDenominator) revert InvalidAuctionFee();
+		if (cancellationFee >= _auctionFeeDenominator)
+			revert InvalidCancellationFee();
+
 		auctionFee = fee;
 		auctionFeeRecipient = feeRecipient;
 		auctionCancellationFee = cancellationFee;
@@ -166,15 +188,20 @@ contract Marketplace is
 		listingOpen = true;
 	}
 
-	function getOpenAuctions() public view virtual returns (bytes32[] memory) {
-		return _openAuctions;
+	function getOpenAuctions()
+		public
+		view
+		virtual
+		returns (bytes32[] memory auctions)
+	{
+		auctions = _openAuctions;
 	}
 
 	function getOpenAuctionsPg(
 		uint _page,
 		uint _size
 	) public view virtual returns (bytes32[] memory) {
-		require(_page > 0, "Page needs to be 1 or above");
+		if (_page == 0) revert InvalidAuctionPage();
 		uint _auctionsIndex;
 		unchecked {
 			_auctionsIndex = _size * _page - _size;
@@ -223,16 +250,15 @@ contract Marketplace is
 
 	function getAuctions(
 		bytes32[] memory ids
-	) public view returns (Auction[] memory) {
+	) public view returns (Auction[] memory auctions) {
 		uint elementNumber = ids.length;
-		Auction[] memory auctions = new Auction[](elementNumber);
+		auctions = new Auction[](elementNumber);
 		for (uint i = 0; i < elementNumber; ) {
 			auctions[i] = _auctions[ids[i]];
 			unchecked {
 				i++;
 			}
 		}
-		return auctions;
 	}
 
 	/**
@@ -247,7 +273,7 @@ contract Marketplace is
 	}
 
 	function setAuctionFee(uint fee) public virtual onlyRole(STORE_ADMIN_ROLE) {
-		require(fee < _auctionFeeDenominator, "Invalid Auction Fee");
+		if (fee >= _auctionFeeDenominator) revert InvalidAuctionFee();
 		auctionFee = fee;
 		emit AuctionFeeChanged(fee);
 	}
@@ -258,7 +284,7 @@ contract Marketplace is
 	 **/
 
 	function setCancellationFee(uint fee) external onlyRole(STORE_ADMIN_ROLE) {
-		require(fee < _auctionFeeDenominator, "Invalid Cancellation Fee");
+		if (fee >= _auctionFeeDenominator) revert InvalidAuctionFee();
 		auctionCancellationFee = fee;
 		emit CancellationFeeChanged(fee);
 	}
@@ -286,7 +312,7 @@ contract Marketplace is
 	function setAuctionFeeRecipient(
 		address recipient
 	) external onlyRole(TREASURY_ROLE) {
-		require(recipient != address(0), "Invalid Recipient Address");
+		if (recipient == address(0)) revert InvalidRecipientAddress();
 		auctionFeeRecipient = recipient;
 		emit TreasuryChanged(recipient);
 	}
@@ -295,7 +321,7 @@ contract Marketplace is
 		uint min,
 		uint max
 	) external onlyRole(STORE_ADMIN_ROLE) {
-		require(min > max, "Invalid duration restrictions");
+		if (min > max) revert InvalidDurationRestrictions(); // greater costs less, 1 OPCODE
 		minAuctionDuration = min;
 		maxAuctionDuration = max;
 		emit DurationChanged(min, max);
@@ -315,7 +341,7 @@ contract Marketplace is
 		onlyRole(STORE_ADMIN_ROLE)
 	{
 		uint _openAuctionCount = _openAuctions.length;
-		require(_openAuctionCount > 0, "No open auctions");
+		if (_openAuctionCount <= 0) revert NoOpenAuctions();
 		bytes32 _auctionId;
 		for (uint i = _openAuctionCount; i > 0; ) {
 			_auctionId = _openAuctions[i - 1];
@@ -343,7 +369,7 @@ contract Marketplace is
 		uint amount
 	) internal {
 		if (!isErc721) {
-			require(amount > 0, "Invalid Token Amount");
+			if (amount <= 0) revert InvalidTokenAmount();
 			IERC1155Upgradeable(nftAddress).safeTransferFrom(
 				seller,
 				address(this),
@@ -422,24 +448,19 @@ contract Marketplace is
 		uint endedAt,
 		uint _askingPrice
 	) external whenNotPaused canList {
-		require(_askingPrice > 0, "Initial asking price must be non-zero");
-		require(
-			(isErc721 && amount == 1) || (!isErc721 && amount > 0),
-			"Invalid Token Amount"
-		);
+		if (_askingPrice <= 0) revert InitialAskingPriceMustBeNonZero();
+		if ((isErc721 && amount != 1) || (!isErc721 && amount <= 0))
+			revert InvalidTokenAmount();
 		bytes32 id = keccak256(
 			abi.encode(msg.sender, nftAddress, tokenId, amount, block.timestamp)
 		);
-		require(
-			_auctions[id].startedAt == 0,
-			"Auction already existed for current auction Id"
-		);
-		require(_allowedNfts[nftAddress], "NFT unauthorized for sale");
-		require(
-			endedAt > block.timestamp + minAuctionDuration &&
-				endedAt < block.timestamp + maxAuctionDuration,
-			"Invalid Auction Duration"
-		);
+		if (_auctions[id].startedAt != 0)
+			revert AuctionAlreadyExistedRorCurrentAuctionId();
+		if (!_allowedNfts[nftAddress]) revert UnauthorizedNFT();
+		if (
+			endedAt <= block.timestamp + minAuctionDuration ||
+			endedAt >= block.timestamp + maxAuctionDuration
+		) revert InvalidAuctionDuration();
 
 		_escrowTokensToSell(isErc721, nftAddress, msg.sender, tokenId, amount);
 
@@ -478,24 +499,19 @@ contract Marketplace is
 		uint bidValue
 	) external whenNotPaused nonReentrant {
 		Auction memory auction = _auctions[id];
-		require(
-			auction.endedAt > block.timestamp,
-			"Auction has already ended. Unable to process bid. Aborting."
-		);
-		require(bidValue > 0, "Zero bids are not allowed");
+		if (auction.endedAt <= block.timestamp)
+			revert AuctionHasAlreadyEndedUnableToProcessBidAborting();
+		if (bidValue <= 0) revert ZeroBidsNotAllowed();
 		uint _auctionBase = auction.highestBid == 0
 			? auction.askingPrice
 			: auction.highestBid;
 		uint _bidIncrementMinimum = (_auctionBase *
 			_auctionMinimumBidIncrement) / _auctionFeeDenominator;
-		require(
-			bidValue >= auction.highestBid + _bidIncrementMinimum,
-			"Bid is smaller than the required increment. Aborting."
-		);
-		require(
-			auction.askingPrice > bidValue,
-			"Bid is higher than asking price. Aborting."
-		);
+		if (bidValue < auction.highestBid + _bidIncrementMinimum)
+			revert BidIsSmallerThanRequiredIncrementAborting(); // need to change test file; can you make same size bid? assume no, corected logic
+
+		if (auction.askingPrice <= bidValue)
+			revert BidHigherThanAskingPriceAborting();
 
 		_auctions[id].highestBid = bidValue;
 		_auctions[id].bidder = msg.sender;
@@ -515,10 +531,8 @@ contract Marketplace is
 
 	function buy(bytes32 id) external whenNotPaused nonReentrant {
 		Auction memory auction = _auctions[id];
-		require(
-			auction.endedAt > block.timestamp,
-			"This listing has already ended. Unable to process purchase. Aborting."
-		);
+		if (auction.endedAt <= block.timestamp)
+			revert ListingHasAlreadyEndedUnableToProcessPurchaseAborting();
 		// pay for the asset/s
 		IERC20Upgradeable(erc20Address).safeTransferFrom(
 			msg.sender,
@@ -539,14 +553,10 @@ contract Marketplace is
 
 	function acceptOffer(bytes32 id) external whenNotPaused nonReentrant {
 		Auction memory auction = _auctions[id];
-		require(
-			auction.seller != address(0), // since it's deleted it's all zero
-			"Listing is already settled. Aborting."
-		);
-		require(
-			auction.seller == msg.sender,
-			"Listing can only be accepted by seller. Aborting."
-		);
+		if (auction.seller == address(0))
+			revert ListingIsAlreadySettledAborting(); // double check error message
+		if (auction.seller != msg.sender)
+			revert ListingCanOnlyBeAcceptedBySellerAborting();
 		settleAuction(id);
 	}
 
@@ -601,14 +611,10 @@ contract Marketplace is
 
 	function cancelAuction(bytes32 id) public virtual nonReentrant {
 		Auction memory auction = _auctions[id];
-		require(
-			auction.seller != address(0), // since it's deleted it's all zero
-			"Auction is already settled. Aborting."
-		);
-		require(
-			auction.seller == msg.sender,
-			"Auction can't be cancelled, only by seller or admin. Aborting."
-		);
+		if (auction.seller == address(0))
+			revert AuctionIsAlreadySettledAborting();
+		if (auction.seller != msg.sender)
+			revert AuctionCantBeCancelledOnlyBySellerOrAdminAborting();
 
 		bool isErc721 = auction.isErc721;
 		address nftAddress = auction.nftAddress;
@@ -639,11 +645,8 @@ contract Marketplace is
 
 	function cancelAuctionAdmin(bytes32 id) internal {
 		Auction memory auction = _auctions[id];
-		require(
-			auction.seller != address(0), // since it's deleted it's all zero
-			"Auction is already settled. Aborting."
-		);
-
+		if (auction.seller == address(0))
+			revert AuctionIsAlreadySettledAborting();
 		bool isErc721 = auction.isErc721;
 		address nftAddress = auction.nftAddress;
 		uint amount = auction.amount;

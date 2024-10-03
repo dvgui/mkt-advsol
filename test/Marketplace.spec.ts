@@ -207,8 +207,9 @@ describe('Auction Contract', async () => {
       ).to.not.be.reverted;
       const openAuctions = await deployer.auction.getOpenAuctions();
       expect(openAuctions.length).to.equal(1);
-      await expect(testUser.auction.bid(openAuctions[0], toWei(1))).to.be.revertedWith(
-        'Bid is smaller than the required increment. Aborting.'
+      await expect(testUser.auction.bid(openAuctions[0], toWei(1))).to.be.revertedWithCustomError(
+        testUser.auction,
+        'BidIsSmallerThanRequiredIncrementAborting'
       );
       await expect(testUser.auction.bid(openAuctions[0], toWei(50))).to.be.revertedWith(
         'ERC20: insufficient allowance'
@@ -251,8 +252,9 @@ describe('Auction Contract', async () => {
       ).to.not.be.reverted;
       const openAuctions = await deployer.auction.getOpenAuctions();
       expect(openAuctions.length).to.equal(1);
-      await expect(testUser.auction.bid(openAuctions[0], toWei(1))).to.be.revertedWith(
-        'Bid is smaller than the required increment. Aborting.'
+      await expect(testUser.auction.bid(openAuctions[0], toWei(1))).to.be.revertedWithCustomError(
+        testUser.auction,
+        'BidIsSmallerThanRequiredIncrementAborting'
       );
       await expect(testUser.auction.bid(openAuctions[0], toWei(50))).to.be.revertedWith(
         'ERC20: insufficient allowance'
@@ -273,7 +275,7 @@ describe('Auction Contract', async () => {
       // 4% fails
       await expect(
         newOwner.auction.bid(openAuctions[0], passingBid.add(passingBid.mul(4).div(100)))
-      ).to.be.revertedWith('Bid is smaller than the required increment. Aborting.');
+      ).to.be.revertedWithCustomError(testUser.auction, 'BidIsSmallerThanRequiredIncrementAborting');
 
       // 5% passes
       await expect(newOwner.auction.bid(openAuctions[0], passingBid.add(passingBid.mul(5).div(100))))
@@ -312,8 +314,9 @@ describe('Auction Contract', async () => {
       ).to.not.be.reverted;
       let openAuctions = await deployer.auction.getOpenAuctions();
       expect(openAuctions.length).to.equal(1);
-      await expect(testUser.auction.bid(openAuctions[0], toWei(1))).to.be.revertedWith(
-        'Bid is smaller than the required increment. Aborting.'
+      await expect(testUser.auction.bid(openAuctions[0], toWei(1))).to.be.revertedWithCustomError(
+        testUser.auction,
+        'BidIsSmallerThanRequiredIncrementAborting'
       );
       await expect(testUser.auction.bid(openAuctions[0], toWei(50))).to.be.revertedWith(
         'ERC20: insufficient allowance'
@@ -334,7 +337,7 @@ describe('Auction Contract', async () => {
       // 4% fails
       await expect(
         newOwner.auction.bid(openAuctions[0], passingBid.add(passingBid.mul(4).div(100)))
-      ).to.be.revertedWith('Bid is smaller than the required increment. Aborting.');
+      ).to.be.revertedWithCustomError(testUser.auction, 'BidIsSmallerThanRequiredIncrementAborting');
 
       // 5% passes
       await expect(newOwner.auction.bid(openAuctions[0], passingBid.add(passingBid.mul(5).div(100))))
@@ -392,8 +395,9 @@ describe('Auction Contract', async () => {
       ).to.not.be.reverted;
       await expect(testUser.nft.balanceOf(testUser.address)).to.eventually.equal(0);
       let openAuctions = await deployer.auction.getOpenAuctions();
-      await expect(newOwner.auction.cancelAuction(openAuctions[0])).to.be.revertedWith(
-        "Auction can't be cancelled, only by seller or admin. Aborting."
+      await expect(newOwner.auction.cancelAuction(openAuctions[0])).to.be.revertedWithCustomError(
+        newOwner.auction,
+        'AuctionCantBeCancelledOnlyBySellerOrAdminAborting'
       );
       // pay fee
       await expect(testUser.auction.cancelAuction(openAuctions[0])).to.be.revertedWith('ERC20: insufficient allowance');
@@ -477,7 +481,7 @@ describe('Auction Contract', async () => {
           endedAt, // auction end timestamp
           price // base price
         )
-      ).to.be.revertedWith('NFT unauthorized for sale');
+      ).to.be.revertedWithCustomError(testUser.auction, 'UnauthorizedNFT');
 
       await deployer.auction.addNFT(deployer.item.address);
       await expect(testUser.item.isApprovedForAll(testUser.address, testUser.auction.address)).to.eventually.equal(
