@@ -556,19 +556,23 @@ contract Marketplace is
 	function settleAuction(bytes32 id) internal {
 		Auction memory auction = _auctions[id];
 
-		bool isErc721 = auction.isErc721;
-		address nftAddress = auction.nftAddress;
-		uint amount = auction.amount;
-		uint tokenId = auction.tokenId;
-		uint highestBid = auction.highestBid;
 		address bidder = auction.bidder;
 
 		if (bidder == address(0)) {
-			_transferNFT(isErc721, nftAddress, auction.seller, tokenId, amount);
+			_transferNFT(auction.isErc721, 
+			auction.nftAddress, 
+			auction.seller, 
+			auction.tokenId, 
+			auction.amount);
 		} else {
-			_transferNFT(isErc721, nftAddress, bidder, tokenId, amount);
+			_transferNFT(auction.isErc721, 
+			auction.nftAddress, 
+			bidder, 
+			auction.tokenId, 
+			auction.amount);
 		}
-
+		
+		uint highestBid = auction.highestBid;
 		if (bidder != address(0) && highestBid != 0) {
 			_transferAssets(highestBid, auction.seller, true);
 		}
@@ -649,12 +653,7 @@ contract Marketplace is
 			"Auction can't be cancelled, only by seller or admin. Aborting."
 		);
 
-		bool isErc721 = auction.isErc721;
-		address nftAddress = auction.nftAddress;
-		uint amount = auction.amount;
-		uint tokenId = auction.tokenId;
-		uint highestBid = auction.highestBid;
-		address bidder = auction.bidder;
+
 		uint penalty = (auction.askingPrice * auctionCancellationFee) /
 			_auctionFeeDenominator;
 
@@ -664,8 +663,10 @@ contract Marketplace is
 			penalty
 		);
 
-		_transferNFT(isErc721, nftAddress, auction.seller, tokenId, amount);
+		_transferNFT(auction.isErc721, auction.nftAddress, auction.seller, auction.tokenId, auction.amount);
 
+		uint highestBid = auction.highestBid;
+		address bidder = auction.bidder;
 		if (bidder != address(0) && highestBid != 0) {
 			_transferAssets(highestBid, bidder, false);
 		}
@@ -683,17 +684,15 @@ contract Marketplace is
 			"Auction is already settled. Aborting."
 		);
 
-		bool isErc721 = auction.isErc721;
-		address nftAddress = auction.nftAddress;
-		uint amount = auction.amount;
-		uint tokenId = auction.tokenId;
+		// Admin can cancel without penalty
+		_transferNFT(auction.isErc721, 
+		auction.nftAddress, 
+		auction.seller, 
+		auction.tokenId, 
+		auction.amount);
+
 		uint highestBid = auction.highestBid;
 		address bidder = auction.bidder;
-
-		// Admin can cancel without penalty
-
-		_transferNFT(isErc721, nftAddress, auction.seller, tokenId, amount);
-
 		if (bidder != address(0) && highestBid != 0) {
 			_transferAssets(highestBid, bidder, false);
 		}
