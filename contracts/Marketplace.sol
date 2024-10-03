@@ -45,6 +45,20 @@ contract Marketplace is
 		uint highestBid;
 	}
 
+	struct DutchAuction {
+		address seller;
+		address nftAddress;
+		bool isErc721;
+		uint tokenId;
+		uint endedAt;
+		uint startedAt;
+		uint amount;
+		uint startPrice;
+		uint endPrice;
+		bool isSettled;
+	}
+
+
 	modifier canList() {
 		if (!(listingOpen || hasRole(STORE_ADMIN_ROLE, msg.sender))) {
 			revert NewListingsPaused();
@@ -53,7 +67,7 @@ contract Marketplace is
 	}
 
 	mapping(bytes32 => Auction) private _auctions;
-
+	mapping(bytes32 => DutchAuction) private _dutchAuctions;
 	mapping(address => bool) private _allowedNfts;
 
 	uint private _auctionCount;
@@ -516,6 +530,49 @@ contract Marketplace is
 	}
 
 
+	function createDutchSale(
+    bool isErc721,
+    address nftAddress,
+    uint tokenId,
+    uint amount,
+    uint endedAt,
+    uint _startPrice,
+    uint _endPrice
+		) public whenNotPaused canList {
+		require(_startPrice > _endPrice, "Start price must be greater than end price");
+		require(_endPrice > 0, "End price must be greater than zero");
+		
+		bytes32 id = keccak256(abi.encode(msg.sender, nftAddress, tokenId, amount, block.timestamp));
+
+		if (_dutchAuctions[id].endedAt != 0) revert AuctionAlreadyExistedRorCurrentAuctionId();
+		if (!_allowedNfts[nftAddress]) revert UnauthorizedNFT();
+		if (endedAt <= block.timestamp + minAuctionDuration || endedAt >= block.timestamp + maxAuctionDuration) {
+			revert InvalidAuctionDuration();
+		}
+
+		_escrowTokensToSell(isErc721, nftAddress, msg.sender, tokenId, amount);
+
+		_dutchAuctions[id] = DutchAuction({
+			seller: msg.sender,
+			nftAddress: nftAddress,
+			isErc721: isErc721,
+			tokenId: tokenId,
+			endedAt: endedAt,
+			startedAt: block.timestamp,
+			amount: amount,
+			startPrice: _startPrice,
+			endPrice: _endPrice,
+			isSettled: false
+		});
+
+		_openAuctions.push(id);
+
+		emit AuctionCreated(isErc721, nftAddress, tokenId, id, amount, endedAt, _startPrice);
+	}
+
+
+
+
 	function bid(
 		bytes32 id,
 		uint bidValue
@@ -549,6 +606,35 @@ contract Marketplace is
 		);
 
 		emit AuctionBid(msg.sender, bidValue, id);
+	}
+
+	function bidDutch(bytes32 id) external payable whenNotPaused nonReentrant {
+    DutchAuction storage auction = _dutchAuctions[id];
+		require(auction.endedAt > block.timestamp, "Auction has ended");
+
+		uint currentPrice = getCurrentDutchAuctionPrice(id);
+		require(msg.value >= currentPrice, "Bid must be at least the current price");
+
+		auction.isSettled = true;
+
+		_transferAssets(msg.value, auction.seller, true);
+		_transferNFT(auction.isErc721, auction.nftAddress, msg.sender, auction.tokenId, auction.amount);
+
+		emit AuctionSettled(id);
+	}
+
+	function getCurrentDutchAuctionPrice(bytes32 id) public view returns (uint) {
+		DutchAuction memory auction = _dutchAuctions[id];
+		if (block.timestamp >= auction.endedAt) {
+			return auction.endPrice;
+		}
+
+		uint elapsed = block.timestamp - auction.startedAt;
+		uint totalDuration = auction.endedAt - auction.startedAt;
+		uint priceDiff = auction.startPrice - auction.endPrice;
+		uint priceDecrement = (priceDiff * elapsed) / totalDuration;
+
+		return auction.startPrice - priceDecrement;
 	}
 
 	function buy(bytes32 id) external whenNotPaused nonReentrant {
