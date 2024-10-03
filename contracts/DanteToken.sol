@@ -30,7 +30,7 @@ contract DanteToken is
 		_grantRole(MINTER_ROLE, defaultAdmin);
 	}
 
-	function mint(address to, uint amount) public onlyRole(MINTER_ROLE) {
+	function mint(address to, uint amount) external onlyRole(MINTER_ROLE) {
 		_mint(to, amount);
 	}
 
